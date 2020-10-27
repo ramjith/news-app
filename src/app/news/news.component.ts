@@ -4,10 +4,10 @@ import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
 import * as _ from 'lodash';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {MatDialog} from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 
-import { CommentsDialog } from '../dialog/comments-dialog';
+import { CommentsDialogComponent } from '../dialog/comments-dialog';
 
 @Component({
   selector: 'app-news',
@@ -38,7 +38,8 @@ export class NewsComponent implements OnInit {
   updates: [];
   id: number;
   noComments: {};
-  likes = {}
+  likes = {};
+  noArticle: boolean;
 
   constructor(private newsapi: NewsApiService,
               private snackBar: MatSnackBar,
@@ -48,6 +49,7 @@ export class NewsComponent implements OnInit {
     this.noComments = [];
     this.isHide = [];
     this.likes = [];
+    this.noArticle = false;
   }
 
   ngOnInit(): void {
@@ -77,6 +79,8 @@ export class NewsComponent implements OnInit {
           this.bookmarkIcon[res.id] = 'bookmark_border';
           this.mArticles.push(res);
           this.visited.push(res);
+        } else {
+          this.noArticle = true;
         }
       });
       this.start++;
@@ -150,7 +154,7 @@ export class NewsComponent implements OnInit {
       id = data;
     }
     this.newsapi.getArticlesByID(id).subscribe((res: any) => {
-      if (!res.deleted && !addComment){
+      if (!res.deleted) {
         this.mComments.push({
           id,
           comment: this.htmlDecode(res.text),
@@ -158,9 +162,10 @@ export class NewsComponent implements OnInit {
           parent: res.parent,
           time: new Date(res.time)
         });
-      }
-      if (addComment) {
-        this.openDialog(res, data.newsTitle);
+
+        if (addComment) {
+          this.openDialog(data.newsTitle);
+        }
       }
     });
   }
@@ -169,10 +174,10 @@ export class NewsComponent implements OnInit {
     const add = true;
     this.getComments(data, add);
   }
-  openDialog(res, title): void {
-    const dialogRef = this.dialog.open(CommentsDialog,{
+  openDialog(title): void {
+    const dialogRef = this.dialog.open(CommentsDialogComponent,{
       data: {
-        res,
+        comments: this.mComments,
         title
       }
     });

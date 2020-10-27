@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { NewsApiService } from '../service/news-api.service';
 import { InfiniteScrollModule } from 'ngx-infinite-scroll';
@@ -23,6 +23,7 @@ import { VisitedComponent } from './visited/visited.component';
 import { NewsComponent } from './news/news.component';
 import { HeaderComponent } from './navigation/header/header.component';
 import { SidenavListComponent } from './navigation/sidenav-list/sidenav-list.component';
+import { CommentsDialogComponent } from './dialog/comments-dialog';
 
 
 @NgModule({
@@ -31,7 +32,8 @@ import { SidenavListComponent } from './navigation/sidenav-list/sidenav-list.com
     VisitedComponent,
     NewsComponent,
     HeaderComponent,
-    SidenavListComponent
+    SidenavListComponent,
+    CommentsDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -50,6 +52,7 @@ import { SidenavListComponent } from './navigation/sidenav-list/sidenav-list.com
     MatDialogModule,
     RouterModule.forRoot(appRoutes)
   ],
+  schemas: [ CUSTOM_ELEMENTS_SCHEMA ],
   providers: [NewsApiService],
   bootstrap: [AppComponent]
 })
