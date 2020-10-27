@@ -5,6 +5,9 @@ import { Subject } from 'rxjs';
 
 import * as _ from 'lodash';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatDialog} from '@angular/material/dialog';
+
+import { CommentsDialog } from '../dialog/comments-dialog';
 
 @Component({
   selector: 'app-news',
@@ -38,7 +41,8 @@ export class NewsComponent implements OnInit {
   likes = {}
 
   constructor(private newsapi: NewsApiService,
-              private snackBar: MatSnackBar){
+              private snackBar: MatSnackBar,
+              private dialog: MatDialog){
     this.mComments = [];
     this.updates = [];
     this.noComments = [];
@@ -120,13 +124,15 @@ export class NewsComponent implements OnInit {
             return o.id === el.id;
           });
           if (kids.length > match.kids.length) {
+            //const newsComments = kids.splice(1, 1);
             const newsComments = _.difference(kids, match.kids);
             for (const nc of newsComments) {
               const snackbarRef = this.snackBar.open('New comments added to -' +  match.title, 'view', {
                 duration: 20000,
               });
+              const data = { id: nc, newsTitle: match.title }
               snackbarRef.onAction().subscribe(() => {
-                this.showNewComments(nc);
+                this.showNewComments(data);
               });
             }
             _.concat(match.kids, newsComments);
@@ -135,23 +141,16 @@ export class NewsComponent implements OnInit {
       });
     });
   }
-  // checkIfExists(): void {
-  //   for (const el of this.bookmarks) {
-  //     for (const up of this.updates) {
-  //       if (up.items.includes(el.id)) {
-  //         const snackbarRef = this.snackBar.open('New comments added to - ' + el.title, 'view', {
-  //           duration: 20000,
-  //         });
-  //         snackbarRef.onAction().subscribe(() => { this.showNewComments(el.id);
-  //         });
-  //       }
-  //     }
-  //   }
-  // }
 
-  getComments(id, addComment): void {
+  getComments(data, addComment): void {
+    let id;
+    if (typeof data === 'object'){
+      id = data.id;
+    } else {
+      id = data;
+    }
     this.newsapi.getArticlesByID(id).subscribe((res: any) => {
-      if (!res.deleted){
+      if (!res.deleted && !addComment){
         this.mComments.push({
           id,
           comment: this.htmlDecode(res.text),
@@ -160,19 +159,23 @@ export class NewsComponent implements OnInit {
           time: new Date(res.time)
         });
       }
-      if (addComment) this.isHide[res.parent] = !this.isHide[res.parent];
-      // const kids = res.kids;
-      // if (kids && kids.length > 0){
-      //   for (const el of kids) {
-      //     this.getComments(el);
-      //   }
-      // }
+      if (addComment) {
+        this.openDialog(res, data.newsTitle);
+      }
     });
   }
 
-  showNewComments(id): void {
+  showNewComments(data): void {
     const add = true;
-    this.getComments(id, add);
+    this.getComments(data, add);
+  }
+  openDialog(res, title): void {
+    const dialogRef = this.dialog.open(CommentsDialog,{
+      data: {
+        res,
+        title
+      }
+    });
   }
   addLike(id): void {
     if (!this.likes[id]){

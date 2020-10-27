@@ -1,0 +1,8 @@
+<mat-dialog-content>
+  <h4>{{title}}</h4>
+    <b>{{mComments.by}} [{{mComments.time}}]</b>: {{mComments.text}}
+</mat-dialog-content>
+<br>
+<mat-dialog-actions align="center">
+    <button mat-raised-button mat-dialog-close (click)="onConfirmClick()">Close</button>
+</mat-dialog-actions>

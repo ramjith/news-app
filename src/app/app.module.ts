@@ -15,6 +15,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialogModule } from '@angular/material/dialog';
 import appRoutes from './app-routes';
 
 import { AppComponent } from './app.component';
@@ -46,6 +47,7 @@ import { SidenavListComponent } from './navigation/sidenav-list/sidenav-list.com
     MatExpansionModule,
     InfiniteScrollModule,
     MatSnackBarModule,
+    MatDialogModule,
     RouterModule.forRoot(appRoutes)
   ],
   providers: [NewsApiService],
