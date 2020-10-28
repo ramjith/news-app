@@ -1,6 +1,10 @@
 <mat-dialog-content>
   <h4>{{title}}</h4>
-    <b>{{mComments.by}} [{{mComments.time}}]</b>: {{mComments.comment}}
+  <div *ngFor="let c of mComments">
+    <mat-card-content>
+      <b>{{c.user}} [{{c.time}}]</b>: {{c.comment}}
+    </mat-card-content>
+  </div>
 </mat-dialog-content>
 <br>
 <mat-dialog-actions align="center">

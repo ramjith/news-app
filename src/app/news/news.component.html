@@ -4,8 +4,8 @@
      [infiniteScrollUpDistance]="scrollUpDistance"
      [infiniteScrollThrottle]="300"
      (scrolled)="onScrollDown()">
-
-  <mat-card class="example-card"  *ngFor="let article of mArticles">
+  <mat-progress-spinner class="center" mode="indeterminate" *ngIf="!isLoaded"></mat-progress-spinner>
+  <mat-card class="news-container"  *ngFor="let article of mArticles">
     <mat-card-content>
       <mat-card-title class="title"><a href={{article.url}} target="_blank">{{article.title}}</a></mat-card-title>
     </mat-card-content>

@@ -15,8 +15,8 @@ import { CommentsDialogComponent } from '../dialog/comments-dialog';
   styleUrls: ['./news.component.scss'],
 })
 export class NewsComponent implements OnInit {
-
-  mArticles: Array<{}> = [];
+  isLoaded: boolean;
+  mArticles: Array<{id: any, kids: []}> = [];
   mComments: Array<{ id: any, comment: string, user: string, parent: number, time: Date}>;
   commentsArr: [];
   newsFeed: any;
@@ -30,13 +30,12 @@ export class NewsComponent implements OnInit {
   data = {};
   destroy$: Subject<boolean> = new Subject<boolean>();
   isHide = {};
-  toggle: boolean;
   visited = [];
   visitedIds = [];
   bookmarkIcon = {};
   bookmarks = [];
   updates: [];
-  id: number;
+  intervalId: number;
   noComments: {};
   likes = {};
   noArticle: boolean;
@@ -50,6 +49,7 @@ export class NewsComponent implements OnInit {
     this.isHide = [];
     this.likes = [];
     this.noArticle = false;
+    this.isLoaded = false;
   }
 
   ngOnInit(): void {
@@ -58,17 +58,20 @@ export class NewsComponent implements OnInit {
     this.newsapi.getTopStories()
       .pipe(takeUntil(this.destroy$)).subscribe((data: any[]) => {
       this.newsFeed = data;
-      this.addItems('push');
+      this.addNewsHeadlines();
     });
 
-    this.id = setInterval(() => {
+    this.intervalId = setInterval(() => {
       if (this.bookmarks && this.bookmarks.length > 0) {
         this.checkForUpdates();
       }
-    }, 5000);
+    }, 300000);
   }
-
-  addItems(method): any {
+  /**
+   * Add news headlines
+   * Get the news headlines from Hacker News API and display it
+   */
+  addNewsHeadlines(): any {
     this.newsFeed = _.difference(this.newsFeed, this.visitedIds);
     this.fetchLength = this.start + this.maxPerSroll;
     while (this.start < this.fetchLength) {
@@ -82,17 +85,18 @@ export class NewsComponent implements OnInit {
         } else {
           this.noArticle = true;
         }
+        this.isLoaded = true;
       });
       this.start++;
     }
   }
 
-  appendItems(): void {
-    this.addItems('push');
-  }
-
+  /**
+   * On Scrolldown add more headlines using ngx-infinite-scroll
+   * Also add viewed headlines to session storage to view it in a separate view
+   */
   onScrollDown(): void {
-    this.appendItems();
+    this.addNewsHeadlines();
     sessionStorage.setItem('visited', JSON.stringify(this.visited));
     sessionStorage.setItem('visitedIds', JSON.stringify(this.visitedIds));
   }
@@ -101,13 +105,17 @@ export class NewsComponent implements OnInit {
     return new DOMParser().parseFromString(input, 'text/html').documentElement.textContent;
   }
 
+  /**
+   * Show all comments on click
+   *
+   */
   showComments(id, comments): void{
     this.commentStart = 0;
     this.commentsArr = [];
     this.isHide[id] = !this.isHide[id];
     if (comments && comments.length > 0) {
       while (this.commentStart < comments.length) {
-        this.getComments(comments[this.commentStart], false);
+        this.getComments(comments[this.commentStart], {});
         this.commentStart++;
       }
       this.noComments[id] = false;
@@ -115,10 +123,19 @@ export class NewsComponent implements OnInit {
       this.noComments[id] = true;
     }
   }
+  /**
+   * Bookmark an article
+   * @param: {Object} article -information about the article
+   */
   bookmark(article): void{
     this.bookmarkIcon[article.id] = 'bookmark';
     this.bookmarks.push(article);
   }
+
+  /**
+   * Check for comments update every 5 minutes
+   * if new comments available, show a notification and on click of it show the comments
+   */
   checkForUpdates(): void {
     this.bookmarks.forEach (el => {
       this.newsapi.getArticlesByID(el.id).subscribe((res: any) => {
@@ -127,66 +144,82 @@ export class NewsComponent implements OnInit {
           const match = _.find(this.mArticles, (o) => {
             return o.id === el.id;
           });
-          if (kids.length > match.kids.length) {
-            //const newsComments = kids.splice(1, 1);
+          if (match && match.kids.length > 0 && kids.length > match.kids.length) {
             const newsComments = _.difference(kids, match.kids);
-            for (const nc of newsComments) {
+            for (const id of newsComments) {
               const snackbarRef = this.snackBar.open('New comments added to -' +  match.title, 'view', {
                 duration: 20000,
               });
-              const data = { id: nc, newsTitle: match.title }
+              const data = { add: true, title: match.title };
               snackbarRef.onAction().subscribe(() => {
-                this.showNewComments(data);
+                this.getComments(id, data);
               });
             }
-            _.concat(match.kids, newsComments);
+            // Update the article with new comments
+            for (const i in this.mArticles) {
+              if (this.mArticles[i].id === el.id) {
+                this.mArticles[i].kids = kids;
+                break;
+              }
+            }
           }
         }
       });
     });
   }
 
-  getComments(data, addComment): void {
-    let id;
-    if (typeof data === 'object'){
-      id = data.id;
-    } else {
-      id = data;
-    }
+  /**
+   * Get comments
+   * if new comments available, show a notification and on click of it
+   * show the comments on a modal
+   */
+  getComments(id, obj): void {
     this.newsapi.getArticlesByID(id).subscribe((res: any) => {
       if (!res.deleted) {
-        this.mComments.push({
-          id,
-          comment: this.htmlDecode(res.text),
-          user: res.by,
-          parent: res.parent,
-          time: new Date(res.time)
-        });
+        if (!_.find(this.mComments, (o) => { return o.id === res.id; })) {
+          this.mComments.push({
+            id,
+            comment: this.htmlDecode(res.text),
+            user: res.by,
+            parent: res.parent,
+            time: new Date(res.time)
+          });
 
-        if (addComment) {
-          this.openDialog(data.newsTitle);
+          if (obj && obj.add) {
+            this.openDialog(obj.title);
+          }
         }
       }
     });
   }
-
-  showNewComments(data): void {
-    const add = true;
-    this.getComments(data, add);
-  }
+  /**
+   * Open modal & show comments
+   *
+   */
   openDialog(title): void {
-    const dialogRef = this.dialog.open(CommentsDialogComponent,{
+    const dialogRef = this.dialog.open(CommentsDialogComponent, {
       data: {
         comments: this.mComments,
         title
       }
     });
   }
+
+  /**
+   * Increment like count on click
+   *
+   */
   addLike(id): void {
     if (!this.likes[id]){
       this.likes[id] = 1;
     } else {
       this.likes[id]++;
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
     }
   }
 }

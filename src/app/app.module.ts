@@ -16,6 +16,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import appRoutes from './app-routes';
 
 import { AppComponent } from './app.component';
@@ -50,6 +51,7 @@ import { CommentsDialogComponent } from './dialog/comments-dialog';
     InfiniteScrollModule,
     MatSnackBarModule,
     MatDialogModule,
+    MatProgressSpinnerModule,
     RouterModule.forRoot(appRoutes)
   ],
   schemas: [ CUSTOM_ELEMENTS_SCHEMA ],
